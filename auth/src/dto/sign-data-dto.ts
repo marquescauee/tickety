@@ -4,7 +4,7 @@ export class SignData {
   @IsEmail({}, { message: 'Email inválido' })
   email: string
 
-  @IsString()
+  @IsString({ message: 'A senha deve ser do tipo String' })
   @Length(4, 16, { message: 'Senha deve ter entre 4 e 16 caracteres' })
   password: string
 }

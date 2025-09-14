@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import { NestFactory } from '@nestjs/core'
 import { AuthModule } from './auth.module'
-import { ValidationPipe } from '@nestjs/common'
+import { BadRequestException, ValidationPipe } from '@nestjs/common'
+import { ValidationExceptionFilter } from './middlewares/error-handling'
 
 async function bootstrap() {
   const app = await NestFactory.create(AuthModule)
@@ -11,8 +12,20 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      exceptionFactory: (validationErrors = []) => {
+        const errors = validationErrors.map((err) => {
+          return {
+            message: Object.values(err.constraints ?? {}),
+            field: err.property,
+          }
+        })
+
+        return new BadRequestException({ errors })
+      },
     }),
   )
+
+  app.useGlobalFilters(new ValidationExceptionFilter())
 
   await app.listen(process.env.PORT ?? 3000)
 }
