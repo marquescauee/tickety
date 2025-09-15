@@ -2,48 +2,49 @@ import {
   ExceptionFilter,
   Catch,
   ArgumentsHost,
-  BadRequestException,
-  InternalServerErrorException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common'
 import { Response } from 'express'
 
-@Catch(BadRequestException)
-export class ValidationExceptionFilter implements ExceptionFilter {
-  catch(exception: BadRequestException, host: ArgumentsHost) {
-    const ctx = host.switchToHttp()
-    const response = ctx.getResponse<Response>()
-    const status = exception.getStatus()
-
-    const exceptionResponse = exception.getResponse() as {
-      errors: { field?: string; messages: string[] }[]
-    }
-
-    response.status(status).json({
-      errors: exceptionResponse.errors,
-    })
-  }
+interface ErrorResponse {
+  field?: string
+  messages: string[]
 }
 
-@Catch(InternalServerErrorException)
-export class InternalServerErrorFilter implements ExceptionFilter {
-  catch(exception: InternalServerErrorException, host: ArgumentsHost) {
+interface ValidationErrorResponse {
+  errors: ErrorResponse[]
+}
+
+@Catch()
+export class ExceptionsFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp()
     const response = ctx.getResponse<Response>()
-    const status = exception.getStatus()
 
-    const exceptionResponse = exception.getResponse() as
-      | string
-      | { message: string | string[]; error?: string }
+    let status = HttpStatus.INTERNAL_SERVER_ERROR
+    let errors: ErrorResponse[] = [{ messages: ['Internal server error'] }]
 
-    const errors =
-      typeof exceptionResponse === 'string'
-        ? [{ messages: [exceptionResponse] }]
-        : Array.isArray(exceptionResponse.message)
-          ? [{ messages: exceptionResponse.message }]
-          : [{ messages: [exceptionResponse.message] }]
+    if (exception instanceof HttpException) {
+      status = exception.getStatus()
+      const excRes = exception.getResponse()
 
-    response.status(status).json({
-      errors,
-    })
+      if (typeof excRes === 'string') {
+        errors = [{ messages: [excRes] }]
+      } else if ((excRes as ValidationErrorResponse).errors) {
+        errors = (excRes as ValidationErrorResponse).errors
+      } else if ((excRes as { message?: string | string[] }).message) {
+        const msg = (excRes as { message?: string | string[] }).message
+        errors = Array.isArray(msg)
+          ? [{ messages: msg.filter((m): m is string => !!m) }]
+          : msg
+            ? [{ messages: [msg] }]
+            : [{ messages: ['Unknown error'] }]
+      }
+    } else {
+      console.error('Unexpected exception:', exception)
+    }
+
+    response.status(status).json({ errors })
   }
 }
