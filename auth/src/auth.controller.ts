@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  InternalServerErrorException,
   Post,
 } from '@nestjs/common'
 import { AuthService } from './auth.service'
@@ -23,7 +24,9 @@ export class AuthController {
   }
 
   @Post('/signup')
-  signUp(@Body() body: SignData): SignData | BadRequestException {
+  signUp(
+    @Body() body: SignData,
+  ): SignData | BadRequestException | InternalServerErrorException {
     const { email, password } = body
 
     return this.authService.signUp({

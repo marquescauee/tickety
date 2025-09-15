@@ -2,7 +2,10 @@
 import { NestFactory } from '@nestjs/core'
 import { AuthModule } from './auth.module'
 import { BadRequestException, ValidationPipe } from '@nestjs/common'
-import { ValidationExceptionFilter } from './middlewares/error-handling'
+import {
+  InternalServerErrorFilter,
+  ValidationExceptionFilter,
+} from './middlewares/error-handling'
 
 async function bootstrap() {
   const app = await NestFactory.create(AuthModule)
@@ -25,7 +28,10 @@ async function bootstrap() {
     }),
   )
 
-  app.useGlobalFilters(new ValidationExceptionFilter())
+  app.useGlobalFilters(
+    new ValidationExceptionFilter(),
+    new InternalServerErrorFilter(),
+  )
 
   await app.listen(process.env.PORT ?? 3000)
 }
