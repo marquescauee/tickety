@@ -7,6 +7,8 @@ import { AppError } from './middlewares/errors/app-error'
 
 async function bootstrap() {
   const app = await NestFactory.create(AuthModule)
+  app.enableCors()
+  app.setGlobalPrefix('api')
 
   app.useGlobalPipes(
     new ValidationPipe({

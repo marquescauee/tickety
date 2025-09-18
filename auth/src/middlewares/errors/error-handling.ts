@@ -25,6 +25,7 @@ export class ExceptionsFilter implements ExceptionFilter {
       errors = [{ messages: [exception.message] }]
     } else {
       console.error('Unexpected exception:', exception)
+      errors = [{ messages: ['Erro inesperado. Tente novamente mais tarde.'] }]
     }
 
     response.status(status).json({ errors })

@@ -9,7 +9,7 @@ import {
 import { AuthService } from './auth.service'
 import { SignData } from './dto/sign-data-dto'
 
-@Controller('api/auth')
+@Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
